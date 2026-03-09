@@ -1,0 +1,45 @@
+{
+  "name": "cloudagi",
+  "version": "0.1.0",
+  "description": "See how much of your coding agent credits you're wasting. Detect installed agents, show usage, calculate sell windows.",
+  "type": "module",
+  "bin": {
+    "cloudagi": "./dist/index.js"
+  },
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target node",
+    "test": "bun test",
+    "lint": "bunx tsc --noEmit",
+    "prepublishOnly": "bun run build"
+  },
+  "keywords": [
+    "ai",
+    "coding-agent",
+    "credits",
+    "usage",
+    "claude",
+    "cursor",
+    "copilot",
+    "marketplace"
+  ],
+  "author": "Arya Teja <aryateja2106@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aryateja2106/cloudagi"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "chalk": "^5.4.0",
+    "cli-table3": "^0.6.5",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}
