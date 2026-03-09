@@ -7,3 +7,7 @@ dist/
 .DS_Store
 .vscode/
 .idea/
+
+# Cloned reference repos (large, don't track)
+references/openfang/
+references/opencode/
