@@ -1,7 +1,8 @@
 import { registerPlugin, type ProbePlugin } from './plugin.js';
 import type { AuthToken, UsageSnapshot } from '../types.js';
 import { existsSync, readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { execSync } from 'node:child_process';
+import { homedir, platform } from 'node:os';
 import { join } from 'node:path';
 
 /** Claude Code credential file paths */
@@ -12,68 +13,59 @@ function getCredentialPaths(): string[] {
   ];
 }
 
-/** Read Claude Code credentials from the local filesystem */
+/** Read credentials from macOS Keychain (service: "Claude Code-credentials") */
+function readKeychainCredentials(): { accessToken: string; refreshToken: string } | null {
+  if (platform() !== 'darwin') return null;
+  try {
+    const raw = execSync(
+      'security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null',
+      { encoding: 'utf-8', timeout: 5000 },
+    ).trim();
+    if (!raw) return null;
+    return parseCredentialJson(raw);
+  } catch {
+    return null;
+  }
+}
+
+/** Parse credential JSON in either shape Claude Code uses */
+function parseCredentialJson(raw: string): { accessToken: string; refreshToken: string } | null {
+  try {
+    const data = JSON.parse(raw);
+    if (data.claudeAiOauth) {
+      return {
+        accessToken: data.claudeAiOauth.accessToken,
+        refreshToken: data.claudeAiOauth.refreshToken ?? '',
+      };
+    }
+    if (data.accessToken) {
+      return {
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken ?? '',
+      };
+    }
+  } catch {
+    // invalid JSON
+  }
+  return null;
+}
+
+/** Read Claude Code credentials — tries filesystem first, then macOS Keychain */
 function readCredentials(): { accessToken: string; refreshToken: string } | null {
+  // 1. Try filesystem
   for (const path of getCredentialPaths()) {
     if (existsSync(path)) {
       try {
         const raw = readFileSync(path, 'utf-8');
-        const data = JSON.parse(raw);
-        // Claude stores credentials in different possible shapes
-        if (data.claudeAiOauth) {
-          return {
-            accessToken: data.claudeAiOauth.accessToken,
-            refreshToken: data.claudeAiOauth.refreshToken,
-          };
-        }
-        if (data.accessToken) {
-          return {
-            accessToken: data.accessToken,
-            refreshToken: data.refreshToken ?? '',
-          };
-        }
+        const result = parseCredentialJson(raw);
+        if (result) return result;
       } catch {
         continue;
       }
     }
   }
-  return null;
-}
-
-/** Check if the access token JWT is expired */
-function isTokenExpired(token: string): boolean {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return true;
-    const payload = JSON.parse(
-      Buffer.from(parts[1], 'base64url').toString('utf-8'),
-    );
-    if (!payload.exp) return false;
-    // Add 5 minute buffer
-    return Date.now() / 1000 > payload.exp - 300;
-  } catch {
-    return true;
-  }
-}
-
-/** Refresh the access token using the refresh token */
-async function refreshAccessToken(refreshToken: string): Promise<string> {
-  const response = await fetch('https://platform.claude.com/v1/oauth/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken,
-      client_id: '9d1c250a-e61b-44d9-88ed-5944d1962f5e',
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Claude token refresh failed: ${response.status}`);
-  }
-
-  const data = await response.json() as { access_token: string };
-  return data.access_token;
+  // 2. Try macOS Keychain
+  return readKeychainCredentials();
 }
 
 /** Determine plan from usage response or JWT claims */
@@ -90,7 +82,10 @@ const claudePlugin: ProbePlugin = {
   type: 'cloud',
 
   async detect(): Promise<boolean> {
-    return getCredentialPaths().some((p) => existsSync(p));
+    // Check filesystem first
+    if (getCredentialPaths().some((p) => existsSync(p))) return true;
+    // Fall back to macOS Keychain
+    return readKeychainCredentials() !== null;
   },
 
   async authenticate(): Promise<AuthToken> {
@@ -99,21 +94,21 @@ const claudePlugin: ProbePlugin = {
       throw new Error('Claude credentials not found');
     }
 
-    let accessToken = creds.accessToken;
-
-    if (isTokenExpired(accessToken) && creds.refreshToken) {
-      accessToken = await refreshAccessToken(creds.refreshToken);
-    }
-
-    return { accessToken, refreshToken: creds.refreshToken };
+    // Read-only: never refresh tokens — that would invalidate the active
+    // Claude Code session. If the token is expired the usage API will 401
+    // and we report "auth expired" instead of breaking the user's session.
+    return { accessToken: creds.accessToken, refreshToken: creds.refreshToken };
   },
 
   async fetchUsage(token: AuthToken): Promise<UsageSnapshot> {
     const response = await fetch('https://api.anthropic.com/api/oauth/usage', {
       headers: {
         Authorization: `Bearer ${token.accessToken}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
         'anthropic-beta': 'oauth-2025-04-20',
       },
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!response.ok) {
@@ -123,9 +118,9 @@ const claudePlugin: ProbePlugin = {
     const data = await response.json() as Record<string, unknown>;
 
     // Parse usage response
-    // Expected shape: { five_hour: { utilization: 0-100 }, seven_day: { utilization: 0-100 } }
-    const fiveHour = data.five_hour as { utilization?: number } | undefined;
-    const sevenDay = data.seven_day as { utilization?: number } | undefined;
+    // Shape: { five_hour: { utilization: 0-100, resets_at: ISO8601 }, seven_day: { ... } }
+    const fiveHour = data.five_hour as { utilization?: number; resets_at?: string } | undefined;
+    const sevenDay = data.seven_day as { utilization?: number; resets_at?: string } | undefined;
 
     const now = new Date();
     const metrics = [];
@@ -135,7 +130,7 @@ const claudePlugin: ProbePlugin = {
         window: 'session' as const,
         used: Math.round(fiveHour.utilization),
         remaining: Math.round(100 - fiveHour.utilization),
-        resetsAt: new Date(now.getTime() + 5 * 3_600_000), // 5 hours rolling
+        resetsAt: fiveHour.resets_at ? new Date(fiveHour.resets_at) : new Date(now.getTime() + 5 * 3_600_000),
         periodMs: 5 * 3_600_000,
       });
     }
@@ -145,7 +140,7 @@ const claudePlugin: ProbePlugin = {
         window: 'weekly' as const,
         used: Math.round(sevenDay.utilization),
         remaining: Math.round(100 - sevenDay.utilization),
-        resetsAt: new Date(now.getTime() + 7 * 24 * 3_600_000), // 7 days rolling
+        resetsAt: sevenDay.resets_at ? new Date(sevenDay.resets_at) : new Date(now.getTime() + 7 * 24 * 3_600_000),
         periodMs: 7 * 24 * 3_600_000,
       });
     }
