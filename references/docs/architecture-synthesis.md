@@ -144,3 +144,65 @@ CloudAGI doesn't need to build an agent OS from scratch. The pieces exist:
 CloudAGI's unique value is the **marketplace layer** — connecting people who have unused credits with people who need AI compute. The runtime and agent layers are reference implementations we can study, fork, or integrate.
 
 The V1 credit probe is step one: **make the waste visible**. Once people see they're wasting $100+/month, the sell-side writes itself.
+
+---
+
+## Concrete Implementation Patterns (from deep source analysis)
+
+### SELLER.toml (adapted from OpenFang's HAND.toml)
+
+```toml
+id = "arya-claude-coder"
+name = "Claude Code Builder"
+description = "Full-stack TypeScript/React development"
+category = "coding"
+pricing = { per_task = 5.00, currency = "USD" }
+provider = "claude"
+plan = "Max"
+max_concurrent_tasks = 3
+
+[[capabilities]]
+type = "build"
+max_tokens = 16384
+
+[[capabilities]]
+type = "review"
+pricing = { per_task = 1.00 }
+
+[[guardrails]]
+action = "sandbox_directory"
+action = "approval_required"
+
+[health]
+check_interval_secs = 60
+auto_pause_on_failure = true
+```
+
+### Credit Deduction Hook (from OpenCode's plugin pattern)
+
+```typescript
+const creditTracker: Plugin = async () => ({
+  "tool.execute.after": async (input, output) => {
+    const cost = calculateCost(input.model, input.message.usage)
+    await deductCredits(input.sessionID, cost)
+    await auditLog.append({ action: "credit_deduction", amount: cost })
+  }
+})
+```
+
+### Task Complexity Routing (from OpenFang's model router)
+
+```typescript
+function scoreComplexity(task): number {
+  let score = 0
+  score += task.estimatedTokens           // Token count
+  score += task.toolsNeeded.length * 20   // Tool count
+  score += task.codeMarkers * 30          // Code patterns
+  if (task.messages > 10) score += (task.messages - 10) * 15
+  return score
+}
+```
+
+### See Also
+- `openfang-deep-analysis.md` — Full crate-by-crate analysis with code
+- `opencode-deep-analysis.md` — Full package analysis with interfaces
