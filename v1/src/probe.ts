@@ -11,7 +11,7 @@ import { calculateWaste } from './waste.js';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-const VERSION = '0.1.2';
+const VERSION = '0.1.3';
 
 /** Guardian operating mode for V1 — 'trusted' skips expensive paranoid checks. */
 const GUARDIAN_MODE: GuardianMode = 'trusted';
