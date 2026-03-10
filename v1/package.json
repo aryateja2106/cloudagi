@@ -1,6 +1,6 @@
 {
   "name": "cloudagi",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "See how much of your coding agent credits you're wasting. Detect installed agents, show usage, calculate sell windows.",
   "type": "module",
   "files": [

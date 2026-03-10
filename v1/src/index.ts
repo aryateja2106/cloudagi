@@ -15,7 +15,7 @@ import './plugins/amp.js';
 program
   .name('cloudagi')
   .description('See how much of your coding agent credits you\'re wasting.')
-  .version('0.1.1')
+  .version('0.1.2')
   .option('--json', 'Output as JSON')
   .option('--providers', 'List detected providers without fetching usage')
   .option('--verbose', 'Show debug info')
