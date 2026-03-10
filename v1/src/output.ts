@@ -42,6 +42,12 @@ function resultToRow(result: ProbeResult): (string | undefined)[] | null {
   if (result.status === 'not-installed') return null;
 
   if (result.status === 'error') {
+    // Show the actual error reason instead of generic ERROR
+    const reason = result.error?.includes('429')
+      ? chalk.yellow('RATE LIMITED')
+      : result.error?.includes('401')
+        ? chalk.yellow('AUTH FAILED')
+        : chalk.red('ERROR');
     return [
       chalk.red(result.provider),
       chalk.dim('—'),
@@ -49,7 +55,7 @@ function resultToRow(result: ProbeResult): (string | undefined)[] | null {
       chalk.dim('—'),
       chalk.dim('—'),
       chalk.dim('—'),
-      chalk.red('ERROR'),
+      reason,
     ];
   }
 

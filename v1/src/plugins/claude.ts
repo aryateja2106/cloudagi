@@ -41,26 +41,7 @@ const claudePlugin = definePlugin({
     });
 
     if (!response.ok) {
-      // Rate limited or auth error — fall back to estimated snapshot
-      // so the provider still appears in output rather than showing ERROR
-      if (response.status === 429 || response.status === 401) {
-        const now = new Date();
-        return {
-          provider: 'claude',
-          plan: 'Max',
-          type: 'cloud',
-          metrics: [{
-            window: 'weekly' as const,
-            used: 0,
-            remaining: 100,
-            resetsAt: new Date(now.getTime() + 7 * 24 * 3_600_000),
-            periodMs: 7 * 24 * 3_600_000,
-          }],
-          detectedAt: now,
-          estimated: true,
-        };
-      }
-      throw new Error(`Claude usage API failed: ${response.status}`);
+      throw new Error(`Claude usage API returned ${response.status}${response.status === 429 ? ' (rate limited — try again in a few minutes)' : ''}`);
     }
 
     const data = await response.json() as Record<string, unknown>;
