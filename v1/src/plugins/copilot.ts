@@ -161,7 +161,16 @@ function quotaToMetric(
   // Unlimited quotas have no waste — exclude them
   if (entry.unlimited === true) return null;
 
-  const percentRemaining = entry.percent_remaining ?? 100;
+  // Derive percent remaining: prefer explicit field, fall back to remaining/entitlement
+  let percentRemaining: number;
+  if (entry.percent_remaining !== undefined) {
+    percentRemaining = entry.percent_remaining;
+  } else if (entry.entitlement && entry.entitlement > 0 && entry.remaining !== undefined) {
+    percentRemaining = (entry.remaining / entry.entitlement) * 100;
+  } else {
+    percentRemaining = 100; // no data available — assume fully available
+  }
+
   const remaining = Math.round(percentRemaining);
   const used = Math.round(100 - percentRemaining);
 
@@ -183,8 +192,9 @@ export function parseCopilotUsage(data: Record<string, unknown>): UsageSnapshot 
   const plan = parseCopilotPlan(planRaw);
 
   const resetRaw = data.quota_reset_date_utc;
-  const resetDate =
+  const resetParsed =
     typeof resetRaw === 'string' && resetRaw ? new Date(resetRaw) : null;
+  const resetDate = resetParsed && !isNaN(resetParsed.getTime()) ? resetParsed : null;
 
   const metrics: UsageMetric[] = [];
 
