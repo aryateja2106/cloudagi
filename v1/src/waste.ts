@@ -13,9 +13,10 @@ const PLAN_PRICES: PlanPricing[] = [
   { provider: 'claude', plan: 'Max', monthlyPrice: 100 },
   { provider: 'claude', plan: 'Pro', monthlyPrice: 20 },
   { provider: 'cursor', plan: 'Pro', monthlyPrice: 20 },
-  { provider: 'cursor', plan: 'Pro+', monthlyPrice: 20 },
+  { provider: 'cursor', plan: 'Pro+', monthlyPrice: 60 },
   { provider: 'cursor', plan: 'Ultra', monthlyPrice: 200 },
-  { provider: 'amp', plan: 'Free', monthlyPrice: 20 }, // $20/day equivalent
+  { provider: 'amp', plan: 'Pro', monthlyPrice: 20 },
+  { provider: 'amp', plan: 'Free', monthlyPrice: 0 },
   { provider: 'codex', plan: 'Plus', monthlyPrice: 20 },
   { provider: 'codex', plan: 'Pro', monthlyPrice: 200 },
   { provider: 'copilot', plan: 'Individual', monthlyPrice: 10 },

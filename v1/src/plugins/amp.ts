@@ -52,16 +52,9 @@ function estimatedSnapshot(plan: string): UsageSnapshot {
     provider: 'amp',
     plan,
     type: 'cloud',
-    metrics: [
-      {
-        window: 'daily',
-        used: 0,
-        remaining: 100,
-        resetsAt: null,
-        periodMs: 24 * 3_600_000,
-      },
-    ],
+    metrics: [],
     detectedAt: new Date(),
+    estimated: true,
   };
 }
 

@@ -60,12 +60,29 @@ function resultToRow(result: ProbeResult): (string | undefined)[] | null {
   }
 
   const { snapshot, waste } = result;
-  if (!snapshot || !waste) return null;
+  if (!snapshot) return null;
+
+  const label = chalk.bold(snapshot.provider.charAt(0).toUpperCase() + snapshot.provider.slice(1));
+
+  // Estimated providers (no usage API) — show detected but no fake numbers
+  if (snapshot.estimated) {
+    return [
+      label,
+      snapshot.plan,
+      chalk.dim('—'),
+      chalk.dim('—'),
+      chalk.dim('—'),
+      chalk.dim('—'),
+      chalk.dim('NO API'),
+    ];
+  }
+
+  if (!waste) return null;
 
   const metric = waste.metric;
 
   return [
-    chalk.bold(snapshot.provider.charAt(0).toUpperCase() + snapshot.provider.slice(1)),
+    label,
     snapshot.plan,
     `${metric.used}%`,
     `${metric.remaining}%`,
@@ -114,7 +131,7 @@ export function renderTable(output: ProbeOutput): string {
   lines.push('');
   if (output.totalWaste > 0) {
     lines.push(
-      `  Total Estimated Waste: ${chalk.yellow.bold(formatDollars(output.totalWaste))}`,
+      `  Total Waste: ${chalk.yellow.bold(formatDollars(output.totalWaste))}`,
     );
   }
 

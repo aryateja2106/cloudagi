@@ -50,16 +50,9 @@ function estimatedSnapshot(plan: string): UsageSnapshot {
     provider: 'codex',
     plan,
     type: 'cloud',
-    metrics: [
-      {
-        window: 'monthly',
-        used: 0,
-        remaining: 100,
-        resetsAt: null,
-        periodMs: 30 * 24 * 3_600_000,
-      },
-    ],
+    metrics: [],
     detectedAt: new Date(),
+    estimated: true,
   };
 }
 
