@@ -7,6 +7,10 @@ import { getPlugins } from './plugins/plugin.js';
 
 // Import plugins to trigger registration
 import './plugins/claude.js';
+import './plugins/copilot.js';
+import './plugins/cursor.js';
+import './plugins/codex.js';
+import './plugins/amp.js';
 
 program
   .name('cloudagi')
