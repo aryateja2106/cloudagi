@@ -10,7 +10,16 @@ export const Marketplace: FC = () => {
         </p>
       </section>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:1.5rem;margin:2rem 0;">
+      <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-bottom:2rem;">
+        <button class="outline" style="border-radius:999px;padding:0.4rem 1rem;font-size:0.85rem;" data-provider="all">All Providers</button>
+        <button class="outline secondary" style="border-radius:999px;padding:0.4rem 1rem;font-size:0.85rem;" data-provider="claude">Claude</button>
+        <button class="outline secondary" style="border-radius:999px;padding:0.4rem 1rem;font-size:0.85rem;" data-provider="copilot">Copilot</button>
+        <button class="outline secondary" style="border-radius:999px;padding:0.4rem 1rem;font-size:0.85rem;" data-provider="cursor">Cursor</button>
+        <button class="outline secondary" style="border-radius:999px;padding:0.4rem 1rem;font-size:0.85rem;" data-provider="codex">Codex</button>
+        <button class="outline secondary" style="border-radius:999px;padding:0.4rem 1rem;font-size:0.85rem;" data-provider="amp">Amp</button>
+      </div>
+
+      <div id="listings-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:1.5rem;margin:2rem 0;">
         <article style="padding:1.5rem;border-radius:12px;background:var(--pico-card-background-color);">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
             <div>
@@ -26,7 +35,7 @@ export const Marketplace: FC = () => {
             </div>
             <small style="color:var(--pico-muted-color);">Resets in 5 days</small>
           </div>
-          <button style="margin-top:1rem;width:100%;" disabled>Buy Credits</button>
+          <a href="/auth/github" style="display:block;margin-top:1rem;text-align:center;padding:0.6rem;border-radius:8px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600;">Sign in to Buy</a>
         </article>
 
         <article style="padding:1.5rem;border-radius:12px;background:var(--pico-card-background-color);">
@@ -44,7 +53,7 @@ export const Marketplace: FC = () => {
             </div>
             <small style="color:var(--pico-muted-color);">Resets in 22 days</small>
           </div>
-          <button style="margin-top:1rem;width:100%;" disabled>Buy Credits</button>
+          <a href="/auth/github" style="display:block;margin-top:1rem;text-align:center;padding:0.6rem;border-radius:8px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600;">Sign in to Buy</a>
         </article>
 
         <article style="padding:1.5rem;border-radius:12px;background:var(--pico-card-background-color);">
@@ -62,32 +71,66 @@ export const Marketplace: FC = () => {
             </div>
             <small style="color:var(--pico-muted-color);">Resets in 28 days</small>
           </div>
-          <button style="margin-top:1rem;width:100%;" disabled>Buy Credits</button>
+          <a href="/auth/github" style="display:block;margin-top:1rem;text-align:center;padding:0.6rem;border-radius:8px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600;">Sign in to Buy</a>
+        </article>
+
+        <article style="padding:1.5rem;border-radius:12px;background:var(--pico-card-background-color);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <div>
+              <strong>Copilot Individual</strong>
+              <div style="font-size:0.85rem;color:var(--pico-muted-color);">80% unused credits</div>
+            </div>
+            <span class="badge badge-green">50% off</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <div>
+              <span style="font-size:1.5rem;font-weight:bold;">$4</span>
+              <span style="color:var(--pico-muted-color);text-decoration:line-through;margin-left:0.5rem;">$8</span>
+            </div>
+            <small style="color:var(--pico-muted-color);">Resets in 18 days</small>
+          </div>
+          <a href="/auth/github" style="display:block;margin-top:1rem;text-align:center;padding:0.6rem;border-radius:8px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600;">Sign in to Buy</a>
+        </article>
+
+        <article style="padding:1.5rem;border-radius:12px;background:var(--pico-card-background-color);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <div>
+              <strong>Amp Pro</strong>
+              <div style="font-size:0.85rem;color:var(--pico-muted-color);">100% unused credits</div>
+            </div>
+            <span class="badge badge-green">35% off</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <div>
+              <span style="font-size:1.5rem;font-weight:bold;">$13</span>
+              <span style="color:var(--pico-muted-color);text-decoration:line-through;margin-left:0.5rem;">$20</span>
+            </div>
+            <small style="color:var(--pico-muted-color);">Resets tomorrow</small>
+          </div>
+          <a href="/auth/github" style="display:block;margin-top:1rem;text-align:center;padding:0.6rem;border-radius:8px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600;">Sign in to Buy</a>
         </article>
       </div>
 
-      <section style="text-align:center;padding:2rem 0;">
-        <p style="color:var(--pico-muted-color);">
-          <span class="badge badge-coming">Coming Soon</span>
-          <br /><br />
-          Marketplace will go live once GitHub OAuth and Stripe integration are complete.
+      <section style="text-align:center;padding:1rem 0;margin-top:1rem;">
+        <p style="color:var(--pico-muted-color);font-size:0.9rem;">
+          These are example listings. Sign in with GitHub to create real listings from your probe data.
           <br />
-          The API is ready at <code>/api/marketplace/listings</code>
+          API available at <code>GET /api/marketplace/listings</code>
         </p>
       </section>
 
       <section class="features" style="margin-top:2rem;">
         <article class="feature">
           <h3>For Sellers</h3>
-          <p>Run <code>cloudagi sell --start</code> to list your unused credits. Set your discount rate and we handle the rest. You get paid via Stripe.</p>
+          <p>Run <code>npx cloudagi</code> to probe your waste, then sign in and list unused credits. Set your discount rate and get paid.</p>
         </article>
         <article class="feature">
           <h3>For Buyers</h3>
-          <p>Browse listings, pick a provider, and buy credits at a discount. Credits are transferred automatically via API delegation.</p>
+          <p>Browse listings, pick a provider, and buy credits at a discount. Pay via Stripe or x402 protocol.</p>
         </article>
         <article class="feature">
-          <h3>Platform Fee</h3>
-          <p>CloudAGI takes a flat 10% fee on each transaction. Sellers keep 90% of the sale price. No hidden costs.</p>
+          <h3>10% Platform Fee</h3>
+          <p>Flat 10% fee on each transaction. Sellers keep 90%. No hidden costs, transparent pricing.</p>
         </article>
       </section>
     </>
