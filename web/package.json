@@ -1,0 +1,19 @@
+{
+  "name": "@cloudagi/web",
+  "version": "0.1.0",
+  "description": "CloudAGI web dashboard — agent credit waste visualization",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --hot src/index.tsx",
+    "build": "bun build src/index.tsx --outdir dist --target bun",
+    "start": "bun run dist/index.js",
+    "lint": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "typescript": "^5.7.0"
+  }
+}
