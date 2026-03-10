@@ -6,11 +6,18 @@ import { Marketplace } from './pages/marketplace.js';
 import { Layout } from './components/layout.js';
 import { probeApi } from './api/probe.js';
 import { marketplaceApi } from './api/marketplace.js';
+import { authApi, authMiddleware } from './api/auth.js';
 
 const app = new Hono();
 
 // Static assets
 app.use('/static/*', serveStatic({ root: './' }));
+
+// Auth middleware — reads JWT from session cookie, sets c.get('session')
+app.use('/api/*', authMiddleware);
+
+// Auth routes
+app.route('/auth', authApi);
 
 // API routes
 app.route('/api', probeApi);
