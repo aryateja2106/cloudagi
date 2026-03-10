@@ -35,6 +35,8 @@ export interface UsageSnapshot {
   type: ProviderType;
   metrics: UsageMetric[];
   detectedAt: Date;
+  /** True if usage data is estimated (API unavailable/rate-limited) */
+  estimated?: boolean;
 }
 
 /** Calculated waste for a provider */
