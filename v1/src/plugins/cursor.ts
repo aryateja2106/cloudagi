@@ -7,6 +7,7 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { registerPlugin } from './plugin.js';
@@ -199,18 +200,19 @@ function readCliConfig(): CursorCredentials | null {
     const authInfo = config.authInfo;
     if (!authInfo) return null;
 
-    const accessToken = authInfo.accessToken ?? authInfo.authId ?? '';
-    const rawUserId = authInfo.userId;
-    const userId =
-      typeof rawUserId === 'string'
-        ? rawUserId
-        : typeof rawUserId === 'number'
-          ? String(rawUserId)
-          : '';
+    // authId format: "google-oauth2|user_01JWS..." — extract user sub after |
+    const authId = authInfo.authId ?? '';
+    const pipeIdx = authId.indexOf('|');
+    const userSub = pipeIdx >= 0 ? authId.slice(pipeIdx + 1) : '';
 
-    if (!userId || !accessToken) return null;
+    if (!userSub) return null;
 
-    return { userId, accessToken, membershipType: '' };
+    // CLI config doesn't have the JWT access token — only the SQLite DB has it.
+    // Without the JWT, we can't build the session cookie for the usage API.
+    // Return null to fall through to SQLite approach.
+    if (!authInfo.accessToken) return null;
+
+    return { userId: userSub, accessToken: authInfo.accessToken, membershipType: '' };
   } catch {
     return null;
   }
@@ -222,28 +224,26 @@ function readSqliteCredentials(): CursorCredentials | null {
   if (!existsSync(dbPath)) return null;
 
   try {
-    // bun:sqlite is available at runtime inside Bun
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { Database } = require('bun:sqlite') as typeof import('bun:sqlite');
-    const db = new Database(dbPath, { readonly: true });
+    // Use system sqlite3 — bun:sqlite can't open WAL-mode DBs locked by Cursor
+    const accessToken = execSync(
+      `sqlite3 "${dbPath}" "SELECT value FROM ItemTable WHERE key = 'cursorAuth/accessToken';" 2>/dev/null`,
+      { encoding: 'utf-8', timeout: 5_000 },
+    ).trim();
 
-    const stmt = db.prepare(
-      "SELECT value FROM ItemTable WHERE key = ?",
-    );
-
-    const tokenRow = stmt.get('cursorAuth/accessToken') as { value: string } | null;
-    const accessToken = tokenRow?.value ?? '';
-
-    const membershipRow = stmt.get('cursorAuth/stripeMembershipType') as { value: string } | null;
-    const membershipType = membershipRow?.value ?? '';
-
-    db.close();
+    const membershipType = execSync(
+      `sqlite3 "${dbPath}" "SELECT value FROM ItemTable WHERE key = 'cursorAuth/stripeMembershipType';" 2>/dev/null`,
+      { encoding: 'utf-8', timeout: 5_000 },
+    ).trim();
 
     if (!accessToken) return null;
 
     // The accessToken is a JWT — extract userId from the sub claim
-    const userId = extractUserIdFromJwt(accessToken);
-    if (!userId) return null;
+    const fullSub = extractUserIdFromJwt(accessToken);
+    if (!fullSub) return null;
+
+    // Sub format: "google-oauth2|user_01JWS..." — API needs just the user_ part
+    const pipeIdx = fullSub.indexOf('|');
+    const userId = pipeIdx >= 0 ? fullSub.slice(pipeIdx + 1) : fullSub;
 
     return { userId, accessToken, membershipType };
   } catch {
