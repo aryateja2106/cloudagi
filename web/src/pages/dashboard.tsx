@@ -17,7 +17,7 @@ export const Dashboard: FC = () => {
         </p>
         <pre style="text-align:left;max-width:600px;margin:1rem auto;">
 {`$ npx cloudagi --json > probe.json
-$ curl -X POST https://cloudagi.com/api/probe \\
+$ curl -X POST https://cloudagi.ai/api/probe \\
     -H "Content-Type: application/json" \\
     -d @probe.json`}
         </pre>
