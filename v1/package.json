@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "description": "See how much of your coding agent credits you're wasting. Detect installed agents, show usage, calculate sell windows.",
   "type": "module",
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
   "bin": {
     "cloudagi": "./dist/index.js"
   },
@@ -25,9 +30,13 @@
   ],
   "author": "Arya Teja <aryateja2106@gmail.com>",
   "license": "MIT",
+  "homepage": "https://cloudagi.ai",
   "repository": {
     "type": "git",
     "url": "https://github.com/aryateja2106/cloudagi"
+  },
+  "bugs": {
+    "url": "https://github.com/aryateja2106/cloudagi/issues"
   },
   "engines": {
     "node": ">=18.0.0"
