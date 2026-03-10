@@ -20,12 +20,14 @@ import type { ProbePlugin } from './plugin.js';
 // ---------------------------------------------------------------------------
 
 /** A credential source the Guardian context knows how to read. */
-export type CredentialSourceType = 'file' | 'keychain';
+export type CredentialSourceType = 'file' | 'keychain' | 'cli' | 'sqlite' | 'custom';
 
 export interface FileCredentialSource {
   type: 'file';
   /** Absolute or home-relative path (~ expansion applied). */
   path: string;
+  /** Custom parser for non-Claude JSON formats. Falls back to Claude JSON parser. */
+  parseFile?: (raw: string) => { accessToken: string; refreshToken?: string } | null;
 }
 
 export interface KeychainCredentialSource {
@@ -34,9 +36,46 @@ export interface KeychainCredentialSource {
   service: string;
   /** Only attempt on this platform; skip silently on others. */
   platform?: NodeJS.Platform;
+  /** Custom parser for the raw keychain value. Falls back to Claude JSON parser. */
+  parseValue?: (raw: string) => { accessToken: string; refreshToken?: string } | null;
 }
 
-export type CredentialSource = FileCredentialSource | KeychainCredentialSource;
+export interface CliCredentialSource {
+  type: 'cli';
+  /** Shell command to execute. Output is passed to parseOutput. */
+  command: string;
+  /** Parse stdout into a token. */
+  parseOutput: (stdout: string) => { accessToken: string; refreshToken?: string } | null;
+}
+
+export interface SqliteCredentialSource {
+  type: 'sqlite';
+  /** Path to SQLite database (~ expansion applied). */
+  path: string;
+  /** Table to query. */
+  table: string;
+  /** Column containing the key name. */
+  keyColumn: string;
+  /** Column containing the value. */
+  valueColumn: string;
+  /** Key name for the access token row. */
+  accessTokenKey: string;
+  /** Key name for the refresh token row (optional). */
+  refreshTokenKey?: string;
+}
+
+export interface CustomCredentialSource {
+  type: 'custom';
+  /** Fully custom credential resolution. */
+  resolve: () => { accessToken: string; refreshToken?: string } | null;
+}
+
+export type CredentialSource =
+  | FileCredentialSource
+  | KeychainCredentialSource
+  | CliCredentialSource
+  | SqliteCredentialSource
+  | CustomCredentialSource;
 
 /**
  * Which file attributes to track for seal verification.
@@ -96,6 +135,11 @@ export interface PluginDefinition {
   credentials: CredentialConfig;
   sessions?: SessionConfig;
   /**
+   * Custom detection logic. If provided, used instead of credential resolution check.
+   * Useful when app presence can be detected independently of credentials.
+   */
+  detect?(): Promise<boolean>;
+  /**
    * Fetch usage data using the pre-resolved Guardian context.
    * Throw to signal an error; the orchestrator handles isolation.
    */
@@ -136,12 +180,14 @@ function parseCredentialJson(raw: string): { accessToken: string; refreshToken: 
 }
 
 /** Attempt to read credentials from a single source. Returns null on any failure. */
-function readSource(source: CredentialSource): { accessToken: string; refreshToken: string } | null {
+function readSource(source: CredentialSource): { accessToken: string; refreshToken?: string } | null {
   if (source.type === 'file') {
     const resolved = expandHome(source.path);
     if (!existsSync(resolved)) return null;
     try {
-      return parseCredentialJson(readFileSync(resolved, 'utf-8'));
+      const raw = readFileSync(resolved, 'utf-8');
+      if (source.parseFile) return source.parseFile(raw);
+      return parseCredentialJson(raw);
     } catch {
       return null;
     }
@@ -154,7 +200,56 @@ function readSource(source: CredentialSource): { accessToken: string; refreshTok
         `security find-generic-password -s "${source.service}" -w 2>/dev/null`,
         { encoding: 'utf-8', timeout: 5_000 },
       ).trim();
-      return raw ? parseCredentialJson(raw) : null;
+      if (!raw) return null;
+      if (source.parseValue) return source.parseValue(raw);
+      return parseCredentialJson(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  if (source.type === 'cli') {
+    try {
+      const stdout = execSync(source.command, {
+        encoding: 'utf-8',
+        timeout: 5_000,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }).trim();
+      return stdout ? source.parseOutput(stdout) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  if (source.type === 'sqlite') {
+    const resolved = expandHome(source.path);
+    if (!existsSync(resolved)) return null;
+    try {
+      // Use bun:sqlite for zero-dependency SQLite reading
+      const { Database } = require('bun:sqlite');
+      const db = new Database(resolved, { readonly: true });
+      const stmt = db.prepare(
+        `SELECT ${source.valueColumn} FROM ${source.table} WHERE ${source.keyColumn} = ?`,
+      );
+      const tokenRow = stmt.get(source.accessTokenKey) as Record<string, string> | null;
+      const accessToken = tokenRow?.[source.valueColumn];
+      if (!accessToken) { db.close(); return null; }
+
+      let refreshToken: string | undefined;
+      if (source.refreshTokenKey) {
+        const refreshRow = stmt.get(source.refreshTokenKey) as Record<string, string> | null;
+        refreshToken = refreshRow?.[source.valueColumn] ?? undefined;
+      }
+      db.close();
+      return { accessToken, refreshToken };
+    } catch {
+      return null;
+    }
+  }
+
+  if (source.type === 'custom') {
+    try {
+      return source.resolve();
     } catch {
       return null;
     }
@@ -171,7 +266,7 @@ function resolveCredentials(config: CredentialConfig): AuthToken | null {
   for (const source of config.sources) {
     const result = readSource(source);
     if (result) {
-      return { accessToken: result.accessToken, refreshToken: result.refreshToken };
+      return { accessToken: result.accessToken, refreshToken: result.refreshToken ?? undefined };
     }
   }
   return null;
@@ -261,7 +356,8 @@ export function definePlugin(
     type: definition.type,
 
     async detect(): Promise<boolean> {
-      // Plugin is detectable if at least one credential source resolves.
+      if (definition.detect) return definition.detect();
+      // Default: plugin is detectable if at least one credential source resolves.
       return resolveCredentials(definition.credentials) !== null;
     },
 
