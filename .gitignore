@@ -11,3 +11,9 @@ dist/
 # Cloned reference repos (large, don't track)
 references/openfang/
 references/opencode/
+
+# NL2Shell
+__pycache__/
+*.ipynb_checkpoints/
+.agents/
+.claude/
