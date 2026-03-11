@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "skills": {
+    "hugging-face-datasets": {
+      "source": "huggingface/skills",
+      "sourceType": "github",
+      "computedHash": "6fd4403176b5eaed59648794a7624c77210dd1572fa0d83f89c240406275ac20"
+    },
+    "hugging-face-evaluation": {
+      "source": "huggingface/skills",
+      "sourceType": "github",
+      "computedHash": "0dc1eb363ab3733d38800dcb0a2f9908b0067ecc086c539b22333aeb720f2d41"
+    },
+    "hugging-face-model-trainer": {
+      "source": "huggingface/skills",
+      "sourceType": "github",
+      "computedHash": "8cf1bb6d7dc8c8ed98fa86c9d76f0313e9e44e77dc27912aaaf882727c50ccd2"
+    },
+    "hugging-face-tool-builder": {
+      "source": "huggingface/skills",
+      "sourceType": "github",
+      "computedHash": "acdb6e04ede54be094174a67c886f89be518c70f9668c71e1771a4474fb17e36"
+    },
+    "hugging-face-trackio": {
+      "source": "huggingface/skills",
+      "sourceType": "github",
+      "computedHash": "f3aed367fdf8a073786df53f1bc1356ab07857c87b6768f71271c1abdc44f503"
+    }
+  }
+}
