@@ -31,5 +31,5 @@ probeApi.get('/probe', (c) => {
 
 // GET /api/health — health check for Cloud Run
 probeApi.get('/health', (c) => {
-  return c.json({ status: 'ok', version: '0.1.0' });
+  return c.json({ status: 'ok', version: '0.2.0-synthesis', x402: true });
 });

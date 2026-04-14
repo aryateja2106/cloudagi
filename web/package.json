@@ -10,7 +10,11 @@
     "lint": "bunx tsc --noEmit"
   },
   "dependencies": {
-    "hono": "^4.7.0"
+    "@x402/core": "^2.7.0",
+    "@x402/evm": "^2.7.0",
+    "@x402/hono": "^2.7.0",
+    "hono": "^4.7.0",
+    "viem": "^2.47.6"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0",

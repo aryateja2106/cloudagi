@@ -22,6 +22,95 @@ export function resetStore(): void {
   orders.clear();
 }
 
+// Seed realistic demo listings for hackathon
+export function seedDemoListings(): void {
+  const now = new Date().toISOString();
+  const resetAt = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(); // 10 days from now
+
+  const demoListings: Listing[] = [
+    {
+      id: 'lst_demo_claude_max',
+      sellerId: 'demo_seller_1',
+      provider: 'claude',
+      plan: 'Max',
+      creditsTotal: 100,
+      creditsAvailable: 52,
+      pricePerCredit: 48, // $0.48/credit (52% discount on $100/mo)
+      retailValue: 100_00,
+      discountPct: 52,
+      status: 'active',
+      resetAt,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'lst_demo_cursor_pro',
+      sellerId: 'demo_seller_2',
+      provider: 'cursor',
+      plan: 'Pro',
+      creditsTotal: 100,
+      creditsAvailable: 70,
+      pricePerCredit: 6, // $0.06/credit (70% discount on $20/mo)
+      retailValue: 20_00,
+      discountPct: 70,
+      status: 'active',
+      resetAt,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'lst_demo_amp_pro',
+      sellerId: 'demo_seller_3',
+      provider: 'amp',
+      plan: 'Pro',
+      creditsTotal: 100,
+      creditsAvailable: 80,
+      pricePerCredit: 4, // $0.04/credit (80% discount on $20/mo)
+      retailValue: 20_00,
+      discountPct: 80,
+      status: 'active',
+      resetAt,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'lst_demo_codex_plus',
+      sellerId: 'demo_seller_1',
+      provider: 'codex',
+      plan: 'Plus',
+      creditsTotal: 100,
+      creditsAvailable: 45,
+      pricePerCredit: 11, // $0.11/credit (45% discount on $20/mo)
+      retailValue: 20_00,
+      discountPct: 45,
+      status: 'active',
+      resetAt,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'lst_demo_copilot_ind',
+      sellerId: 'demo_seller_4',
+      provider: 'copilot',
+      plan: 'Individual',
+      creditsTotal: 100,
+      creditsAvailable: 60,
+      pricePerCredit: 4, // $0.04/credit (60% discount on $10/mo)
+      retailValue: 10_00,
+      discountPct: 60,
+      status: 'active',
+      resetAt,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  for (const listing of demoListings) {
+    listings.set(listing.id, listing);
+  }
+  console.log(`Seeded ${demoListings.length} demo listings`);
+}
+
 // ---------------------------------------------------------------------------
 // Validation helpers
 // ---------------------------------------------------------------------------

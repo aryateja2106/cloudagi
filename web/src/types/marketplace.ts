@@ -41,7 +41,10 @@ export interface Order {
   platformFeeCents: number; // CloudAGI cut (10%)
   sellerPayoutCents: number;
   status: OrderStatus;
+  paymentMethod?: 'x402' | 'stripe';
   stripePaymentIntentId?: string;
+  txHash?: string;
+  network?: string;
   createdAt: string;
   completedAt?: string;
 }
